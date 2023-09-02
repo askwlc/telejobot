@@ -1,5 +1,5 @@
 from telethon.sync import TelegramClient, events
-from config.settings import ID, HASH
+from config.settings import ID, HASH, MY_ID
 import logging
 
 KEYWORDS = ['python']
@@ -23,14 +23,20 @@ async def monitor_channels(event):
     """Фильтрация и переадресация сообщений по заданным параметрам."""
     message = event.message.text.lower()
     if any(key in message for key in KEYWORDS) and not any(stop in message for stop in STOPWORDS):
-        await event.message.forward_to('NickShinkov')
+        await event.message.forward_to(MY_ID)
 
 
 async def check_status(event):
     """Проверка работоспособности бота и получение списка отслеживаемых каналов."""
     channels = await get_channels_from_folder('Work')
     channel_names = [channel.title for channel in channels]
-    response = "Статус бота: Запущен\nОтслеживаемые каналы:\n{}".format('\n'.join(channel_names))
+    num_channels = len(channel_names)
+    response = (
+        f'Статус бота: Работает\n'
+        f'Количество отслеживаемых каналов: {num_channels}\n'
+        f'Список каналов:\n' + '\n'.join(channel_names)
+    )
+
     await event.respond(response)
 
 
@@ -38,7 +44,7 @@ async def setup_event_handlers():
     """Обработчик событий."""
     channels = await get_channels_from_folder('Work')
     client.add_event_handler(monitor_channels, events.NewMessage(chats=channels))
-    client.add_event_handler(check_status, events.NewMessage(pattern='/status'))
+    client.add_event_handler(check_status, events.NewMessage(pattern='/bot'))
 
 
 if __name__ == '__main__':
